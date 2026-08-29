@@ -1,7 +1,3 @@
-```python
-# app/schemas/user_schema.py
-# Modelos de datos (Pydantic v2) para validar entradas y estructurar salidas
-
 from typing import Literal
 from pydantic import BaseModel, EmailStr, Field
 
