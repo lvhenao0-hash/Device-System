@@ -20,4 +20,8 @@ def verificar_api_key(x_api_key: str = Header(default=None)):
     api_key_esperada = "device_systems_secret"
     if x_api_key is not None and x_api_key != api_key_esperada:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="X-API-Key invalida")
+<<<<<<< HEAD
     return x_api_key
+=======
+    return x_api_key
+>>>>>>> a0aa56d0e8304b04ff5cea7ad42de91ffb0e6069

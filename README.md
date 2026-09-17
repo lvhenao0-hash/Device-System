@@ -18,6 +18,7 @@ Swagger/OpenAPI mejorada y reutilización de lógica mediante
 ## Estructura del proyecto
 
 A partir de esta versión, el proyecto separa responsabilidades en capas
+<<<<<<< HEAD
 (`routes`, `schemas`, `services`, `dependencies`, `data`):
 
 ```
@@ -38,6 +39,9 @@ device_systems/
 ├── requirements.txt                   # Dependencias del proyecto
 └── README.md
 ```
+=======
+(`routes`, `schemas`, `services`, `dependencies`, `data`).
+>>>>>>> a0aa56d0e8304b04ff5cea7ad42de91ffb0e6069
 
 ## Instalación
 
@@ -111,6 +115,7 @@ El servidor quedará disponible en:
 
 > Nota: agregar aquí capturas de Swagger UI (`/docs`) y ReDoc (`/redoc`) para los nuevos endpoints PUT, PATCH y DELETE.
 
+<<<<<<< HEAD
 ## Ejemplos de peticiones y respuestas
 
 ### Actualización completa — `PUT /users/2`
@@ -136,6 +141,8 @@ Response `200 OK`:
 }
 ```
 
+=======
+>>>>>>> a0aa56d0e8304b04ff5cea7ad42de91ffb0e6069
 ### Actualización parcial — `PATCH /users/3`
 
 Request:
