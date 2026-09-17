@@ -1,5 +1,4 @@
 # app/data/users_db.py
-<<<<<<< HEAD
 # Simulación de base de datos en memoria para el recurso "users".
 # Se extrae de user_routes.py (Fase 1) para separar responsabilidades,
 # siguiendo la estructura solicitada en la Fase 2 de la actividad.
@@ -19,7 +18,7 @@ def obtener_siguiente_id() -> int:
     nuevo_id = contador_id
     contador_id += 1
     return nuevo_id
-=======
+
 # Simulación de base de datos en memoria para el recurso "users"
 
 users_db = [
@@ -35,4 +34,4 @@ def obtener_siguiente_id():
     id_actual = _contador["siguiente_id"]
     _contador["siguiente_id"] += 1
     return id_actual
->>>>>>> a0aa56d0e8304b04ff5cea7ad42de91ffb0e6069
+

@@ -1,6 +1,4 @@
 # app/routes/user_routes.py
-<<<<<<< HEAD
-=======
 # Endpoints del recurso "users": listar, consultar por id, filtrar, crear,
 # actualizar (completo y parcial) y eliminar.
 #
@@ -9,14 +7,12 @@
 # para separar responsabilidades. Las rutas ahora se apoyan en dependencias
 # reutilizables (Depends) definidas en app/dependencies/user_dependencies.py.
 
->>>>>>> a0aa56d0e8304b04ff5cea7ad42de91ffb0e6069
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.dependencies.user_dependencies import get_user_or_404
 from app.schemas.user_schema import UserCreate, UserPatch, UserResponse, UserUpdate
 from app.services import user_service
 
-<<<<<<< HEAD
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
@@ -24,7 +20,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 def listar_usuarios(
     role: Optional[str] = Query(None),
     is_active: Optional[bool] = Query(None),
-=======
+
 from fastapi import APIRouter, Depends, Query, status
 
 from app.schemas.user_schema import (
@@ -59,12 +55,9 @@ def listar_usuarios(
     role: Optional[str] = Query(None, description="Filtrar por rol: admin, support o user"),
     is_active: Optional[bool] = Query(None, description="Filtrar por estado activo/inactivo"),
     settings: dict = Depends(obtener_configuracion_api),
->>>>>>> a0aa56d0e8304b04ff5cea7ad42de91ffb0e6069
 ):
     return user_service.listar_usuarios(role=role, is_active=is_active)
 
-
-<<<<<<< HEAD
 @router.get("/{user_id}", response_model=UserResponse, summary="Consultar un usuario")
 def obtener_usuario(usuario: dict = Depends(get_user_or_404)):
     return usuario
@@ -98,7 +91,7 @@ def actualizar_usuario_parcial(datos: UserPatch, usuario_existente: dict = Depen
 def eliminar_usuario(usuario_existente: dict = Depends(get_user_or_404)):
     user_service.eliminar_usuario(usuario_existente["id"])
     return {"detail": f"Usuario con id {usuario_existente['id']} eliminado correctamente"}
-=======
+
 @router.get(
     "/{user_id}",
     response_model=UserResponse,
@@ -169,4 +162,3 @@ def actualizar_usuario_parcial(
 def eliminar_usuario(user_id: int, usuario_existente: dict = Depends(obtener_usuario_o_404)):
     user_service.eliminar_usuario(user_id)
     return {"detail": f"Usuario con id {user_id} eliminado correctamente"}
->>>>>>> a0aa56d0e8304b04ff5cea7ad42de91ffb0e6069
