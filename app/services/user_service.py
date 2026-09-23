@@ -1,60 +1,53 @@
-# app/services/user_service.py
-# Logica de negocio del recurso "users"
-
 from typing import Optional
-from app.data.users_db import obtener_siguiente_id, users_db
+from sqlalchemy.orm import Session
+from app.models.user_model import User
 
 
-def listar_usuarios(role: Optional[str] = None, is_active: Optional[bool] = None):
-    resultado = users_db
+def listar_usuarios(db: Session, role: Optional[str] = None, is_active: Optional[bool] = None, order_by: Optional[str] = None):
+    query = db.query(User)
     if role is not None:
-        resultado = [u for u in resultado if u["role"] == role]
+        query = query.filter(User.role == role)
     if is_active is not None:
-        resultado = [u for u in resultado if u["is_active"] == is_active]
-    return resultado
+        query = query.filter(User.is_active == is_active)
+    if order_by == "name":
+        query = query.order_by(User.name.asc())
+    elif order_by == "created_at":
+        query = query.order_by(User.created_at.asc())
+    return query.all()
 
 
-def buscar_usuario_por_id(user_id: int):
-    for usuario in users_db:
-        if usuario["id"] == user_id:
-            return usuario
-    return None
+def buscar_usuario_por_id(db: Session, user_id: int):
+    return db.query(User).filter(User.id == user_id).first()
 
 
-def correo_ya_existe(email: str, excluir_id: Optional[int] = None):
-    for usuario in users_db:
-        if usuario["email"] == email and usuario["id"] != excluir_id:
-            return True
-    return False
+def buscar_usuario_por_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email).first()
 
 
-def crear_usuario(datos: dict):
-    nuevo_usuario = datos.copy()
-    nuevo_usuario["id"] = obtener_siguiente_id()
-    users_db.append(nuevo_usuario)
+def crear_usuario(db: Session, datos: dict):
+    nuevo_usuario = User(**datos)
+    db.add(nuevo_usuario)
+    db.commit()
+    db.refresh(nuevo_usuario)
     return nuevo_usuario
 
 
-def actualizar_usuario_completo(user_id: int, datos: dict):
-    usuario = buscar_usuario_por_id(user_id)
-    if usuario is None:
-        return None
-    usuario.update(datos)
-    usuario["id"] = user_id
+def actualizar_usuario_completo(db: Session, usuario: User, datos: dict):
+    for campo, valor in datos.items():
+        setattr(usuario, campo, valor)
+    db.commit()
+    db.refresh(usuario)
     return usuario
 
 
-def actualizar_usuario_parcial(user_id: int, datos: dict):
-    usuario = buscar_usuario_por_id(user_id)
-    if usuario is None:
-        return None
-    usuario.update(datos)
+def actualizar_usuario_parcial(db: Session, usuario: User, datos: dict):
+    for campo, valor in datos.items():
+        setattr(usuario, campo, valor)
+    db.commit()
+    db.refresh(usuario)
     return usuario
 
 
-def eliminar_usuario(user_id: int):
-    usuario = buscar_usuario_por_id(user_id)
-    if usuario is None:
-        return False
-    users_db.remove(usuario)
-    return True
+def eliminar_usuario(db: Session, usuario: User):
+    db.delete(usuario)
+    db.commit()
