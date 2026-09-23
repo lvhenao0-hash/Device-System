@@ -4,7 +4,6 @@
 from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, Field
 
-
 class UserBase(BaseModel):
     name: str = Field(..., min_length=3, description="Nombre completo del usuario")
     email: EmailStr = Field(..., description="Correo electronico unico del usuario")

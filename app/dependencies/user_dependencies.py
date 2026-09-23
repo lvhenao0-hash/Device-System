@@ -23,4 +23,3 @@ def verificar_api_key(x_api_key: str = Header(default=None)):
 
     return x_api_key
 
-    return x_api_key

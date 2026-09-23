@@ -209,7 +209,7 @@ También se agregaron dos dependencias adicionales como ejemplo del patrón: `ob
 
 ## Capturas de Swagger UI
 
-![Swagger UI - vista general con el CRUD completo](images/evo8/swagger_general.png)
+![Swagger UI - vista general con el CRUD completo]
 
 
 ## Evidencia de pruebas de cada endpoint (Postman)
@@ -218,61 +218,61 @@ Todas las capturas están en `images/evo8/`.
 
 ### GET /users
 
-![GET /users](images/evo8/postman_get_users.png)
+![GET /users](images/evo8/get_users.png)
 
 `200 OK` — lista completa de usuarios.
 
 ### GET /users/999 (usuario inexistente)
 
-![GET /users/999](images/evo8/postman_get_user_404.png)
+![GET /users/999](images/evo8/get_user_404.png)
 
 `404 Not Found` — `{"detail": "Usuario no encontrado"}`
 
 ### POST /users (exitoso)
 
-![POST /users exitoso](images/evo8/postman_post_exitoso.png)
+![POST /users exitoso](images/evo8/post_exitoso.png)
 
 `201 Created` — usuario creado con `id` asignado automáticamente.
 
 ### POST /users (correo duplicado)
 
-![POST /users correo duplicado](images/evo8/postman_post_duplicado_400.png)
+![POST /users correo duplicado](images/evo8/post_duplicado_400.png)
 
 `400 Bad Request` — `{"detail": "Ya existe un usuario registrado con el correo sofia@correo.com"}`
 
 ### POST /users (datos inválidos)
 
-![POST /users datos inválidos](images/evo8/postman_post_invalido_422.png)
+![POST /users datos inválidos](images/evo8/post_invalido_422.png)
 
 `422 Unprocessable Content` — Pydantic detalla exactamente qué campo(s) fallaron (nombre muy corto, en este caso).
 
 ### PUT /users/{id} (reemplazo completo, exitoso)
 
-![PUT /users/2 exitoso](images/evo8/postman_put_exitoso.png)
+![PUT /users/2 exitoso](images/evo8/put_exitoso.png)
 
 `200 OK` — todos los campos del usuario quedan reemplazados por los nuevos valores enviados.
 
 ### PATCH /users/{id} (actualización parcial)
 
-![PATCH /users/3 parcial](images/evo8/postman_patch_parcial.png)
+![PATCH /users/3 parcial](images/evo8/patch_parcial.png)
 
 `200 OK` — solo se modifica el campo `role`; el resto de los datos del usuario permanece igual.
 
 ### PATCH /users/{id} (sin campos)
 
-![PATCH /users/3 vacío](images/evo8/postman_patch_vacio_400.png)
+![PATCH /users/3 vacío](images/evo8/patch_vacio_400.png)
 
 `400 Bad Request` — `{"detail": "Debes enviar al menos un campo para actualizar"}`
 
 ### DELETE /users/{id} (exitoso)
 
-![DELETE /users/1 exitoso](images/evo8/postman_delete_exitoso.png)
+![DELETE /users/1 exitoso](images/evo8/delete_exitoso.png)
 
 `200 OK` — `{"detail": "Usuario con id 1 eliminado correctamente"}`
 
 ### DELETE /users/{id} (usuario ya eliminado)
 
-![DELETE /users/1 ya eliminado](images/evo8/postman_delete_404.png)
+![DELETE /users/1 ya eliminado](images/evo8/delete_404.png)
 
 `404 Not Found` — porque ya no existe (se había eliminado en la prueba anterior).
 
