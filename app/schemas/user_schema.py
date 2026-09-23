@@ -1,8 +1,7 @@
-# app/schemas/user_schema.py
-# Modelos de datos (Pydantic v2) para validar entradas y estructurar salidas
-
+from datetime import datetime
 from typing import Literal, Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 
 class UserBase(BaseModel):
     name: str = Field(..., min_length=3, description="Nombre completo del usuario")
@@ -12,14 +11,17 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
+    """Entrada para POST /users."""
     pass
 
 
 class UserUpdate(UserBase):
+    """Entrada para PUT /users/{user_id}: reemplazo completo."""
     pass
 
 
 class UserPatch(BaseModel):
+    """Entrada para PATCH /users/{user_id}: actualizacion parcial, todo opcional."""
     name: Optional[str] = Field(None, min_length=3)
     email: Optional[EmailStr] = Field(None)
     role: Optional[Literal["admin", "support", "user"]] = Field(None)
@@ -27,7 +29,8 @@ class UserPatch(BaseModel):
 
 
 class UserResponse(UserBase):
+    """Salida: incluye datos que genera la base de datos."""
     id: int = Field(..., description="Identificador unico del usuario")
+    created_at: datetime = Field(..., description="Fecha y hora de creacion")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
