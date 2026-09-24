@@ -5,7 +5,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 Base = declarative_base()
 
 # Crear el motor de conexión (ejemplo con SQLite)
-engine = create_engine("sqlite:///example.db", echo=True)
+engine = create_engine("sqlite:///device_systems.db", echo=True)
 
 # Crear la sesión
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
