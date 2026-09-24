@@ -15,4 +15,3 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     loans = relationship("Loan", back_populates="user")
-EOF
