@@ -1,285 +1,234 @@
 # device_systems
 
-**Aprendiz:** Laura Vanessa Henao López
-**Actividad:** GA1-220501096-01-AA1-EV09 — FastAPI Intermedio: Evolución de device_systems con CRUD completo, manejo de errores, Swagger/OpenAPI y Dependency Injection
+API REST desarrollada con **FastAPI** para la gestión de usuarios, dispositivos y préstamos, con persistencia en base de datos mediante **SQLAlchemy**, migraciones controladas con **Alembic**, relaciones entre modelos y consultas avanzadas con **joins** y filtros.
+
+Proyecto desarrollado por: **Laura Vanessa Henao**
 
 ---
 
-## Descripción de la API
+## Evolución del proyecto
 
-`device_systems` es una API REST construida con FastAPI para gestionar los usuarios de un sistema. Esta versión (**v2.0.0**) evoluciona la API básica de la actividad anterior (EV07, solo `GET`/`POST`) hacia un **CRUD completo**: ahora permite crear, listar, consultar, filtrar, actualizar (completa o parcialmente) y eliminar usuarios, con manejo de errores estructurado, códigos de estado HTTP correctos, reutilización de lógica mediante `Depends()`, y documentación automática mejorada con Swagger/OpenAPI.
+- **EV09**: migración de almacenamiento en memoria a persistencia con SQLAlchemy + SQLite, CRUD completo de `users`.
+- **EV10** *(actual)*: incorporación de Alembic, nuevos recursos `devices` y `loans`, relaciones entre modelos, consultas con joins y filtros avanzados.
 
-## Tecnologías utilizadas
+---
 
-| Tecnología | Uso en el proyecto |
-|---|---|
-| **FastAPI** | Framework principal para construir la API |
-| **Uvicorn** | Servidor ASGI que ejecuta la aplicación |
-| **Pydantic v2** | Validación y serialización de datos de entrada/salida |
-| **email-validator** | Validación del formato de correos (requerido por `EmailStr`) |
+## Estructura del proyecto
 
-
-## Explicación de la estructura del proyecto
-
-```
 device_systems/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                       ← arranca la app, metadatos Swagger, cabeceras
-│   ├── routes/
-│   │   └── user_routes.py            ← endpoints: GET, POST, PUT, PATCH, DELETE
-│   ├── schemas/
-│   │   └── user_schema.py            ← UserCreate, UserUpdate, UserPatch, UserResponse
-│   ├── services/
-│   │   └── user_service.py           ← lógica de negocio (CRUD sobre users_db)
-│   ├── dependencies/
-│   │   └── user_dependencies.py      ← funciones reutilizables con Depends()
-│   └── data/
-│       └── users_db.py               ← "base de datos" en memoria
-├── images/                           ← capturas de Swagger UI, ReDoc y Postman
-├── requirements.txt
-└── README.md
-```
+│── app/
+│ │── main.py
+│ │
+│ │── database/
+│ │ │── connection.py
+│ │
+│ │── models/
+│ │ │── user_model.py
+│ │ │── device_model.py
+│ │ │── loan_model.py
+│ │
+│ │── schemas/
+│ │ │── user_schema.py
+│ │ │── device_schema.py
+│ │ │── loan_schema.py
+│ │
+│ │── routes/
+│ │ │── user_routes.py
+│ │ │── device_routes.py
+│ │ │── loan_routes.py
+│ │ │── user_loan_routes.py
+│ │
+│ │── services/
+│ │ │── user_service.py
+│ │ │── device_service.py
+│ │ │── loan_service.py
+│ │
+│ │── dependencies/
+│ │── database_dependency.py
+│ │── user_dependencies.py
+│
+│── alembic/
+│ │── versions/
+│
+│── alembic.ini
+│── requirements.txt
+│── README.md
 
-Cada carpeta tiene una sola responsabilidad, siguiendo el principio de separación de capas:
 
-- **`routes/`** solo define endpoints (qué URL, qué método, qué modelo espera). No sabe cómo se buscan o guardan los usuarios.
-- **`services/`** contiene toda la lógica de negocio (buscar, crear, actualizar, eliminar). Las rutas la llaman; nunca tocan `users_db` directamente.
-- **`schemas/`** define la forma de los datos de entrada y salida, con sus validaciones.
-- **`dependencies/`** contiene funciones reutilizables (como buscar un usuario y lanzar `404` si no existe), inyectadas con `Depends()`.
-- **`data/`** simula la base de datos. Si mañana se conecta una base real, solo cambia este archivo.
+---
 
-## Tabla de endpoints
+## Modelos y relaciones
 
-| Operación | Método | Ruta | Código esperado |
-|---|---|---|---|
-| Listar usuarios | GET | `/users` | `200 OK` |
-| Filtrar por rol/estado | GET | `/users?role=admin` / `?is_active=true` | `200 OK` |
-| Consultar usuario | GET | `/users/{user_id}` | `200 OK` / `404 Not Found` |
-| Crear usuario | POST | `/users` | `201 Created` / `400` / `422` |
-| Actualizar completo | PUT | `/users/{user_id}` | `200 OK` / `404` / `400` |
-| Actualizar parcial | PATCH | `/users/{user_id}` | `200 OK` / `404` / `400` |
-| Eliminar usuario | DELETE | `/users/{user_id}` | `200 OK` / `404 Not Found` |
-
-## Modelos Pydantic (entrada y salida)
-
-```python
-class UserBase(BaseModel):
-    name: str = Field(..., min_length=3)
-    email: EmailStr
-    role: Literal["admin", "support", "user"]
-    is_active: bool = True
-
-class UserCreate(UserBase): pass      # POST: todos los campos obligatorios
-class UserUpdate(UserBase): pass      # PUT: todos los campos obligatorios (reemplazo total)
-
-class UserPatch(BaseModel):           # PATCH: todos los campos OPCIONALES
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    role: Optional[Literal["admin", "support", "user"]] = None
-    is_active: Optional[bool] = None
-
-class UserResponse(UserBase):
-    id: int                           # lo único que se agrega en la salida
-```
-
-## Ejemplos de peticiones y respuestas
-
-### GET /users?role=admin
-
-```bash
-curl "http://127.0.0.1:8000/users?role=admin"
-```
-```json
-[{"name": "Ana Torres", "email": "ana@correo.com", "role": "admin", "is_active": true, "id": 1}]
-```
-
-### POST /users
-
-```bash
-curl -X POST http://127.0.0.1:8000/users \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Sofía Restrepo", "email": "sofia@correo.com", "role": "user", "is_active": true}'
-```
-```json
-{"name": "Sofía Restrepo", "email": "sofia@correo.com", "role": "user", "is_active": true, "id": 4}
-```
-Código: `201 Created`
-
-### PUT /users/2 (reemplazo completo)
-
-```bash
-curl -X PUT http://127.0.0.1:8000/users/2 \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Luis Ramirez G.", "email": "luisg@correo.com", "role": "admin", "is_active": false}'
-```
-```json
-{"name": "Luis Ramirez G.", "email": "luisg@correo.com", "role": "admin", "is_active": false, "id": 2}
-```
-Código: `200 OK`
-
-### PATCH /users/3 (actualización parcial)
-
-```bash
-curl -X PATCH http://127.0.0.1:8000/users/3 \
-  -H "Content-Type: application/json" \
-  -d '{"role": "support"}'
-```
-```json
-{"name": "Camilo Sarrazola", "email": "camilo@correo.com", "role": "support", "is_active": false, "id": 3}
-```
-Solo cambió `role`; el resto de los campos quedó intacto. Código: `200 OK`
-
-### PATCH /users/3 (sin campos → error)
-
-```bash
-curl -X PATCH http://127.0.0.1:8000/users/3 -H "Content-Type: application/json" -d '{}'
-```
-```json
-{"detail": "Debes enviar al menos un campo para actualizar"}
-```
-Código: `400 Bad Request`
-
-### DELETE /users/1
-
-```bash
-curl -X DELETE http://127.0.0.1:8000/users/1
-```
-```json
-{"detail": "Usuario con id 1 eliminado correctamente"}
-```
-Código: `200 OK`
-
-## Códigos de estado usados
-
-| Código | Cuándo se usa |
+| Modelo | Descripción |
 |---|---|
-| `200 OK` | Operación exitosa (GET, PUT, PATCH, DELETE) |
-| `201 Created` | Usuario creado exitosamente (POST) |
-| `400 Bad Request` | Correo duplicado, o PATCH enviado sin ningún campo |
-| `404 Not Found` | El usuario solicitado no existe |
-| `422 Unprocessable Content` | Datos inválidos según Pydantic (nombre corto, email mal formado, rol no permitido) |
+| `User` | Usuarios del sistema (`name`, `email`, `role`, `is_active`, `created_at`) |
+| `Device` | Dispositivos disponibles para préstamo (`name`, `serial_number`, `device_type`, `brand`, `is_available`, `created_at`) |
+| `Loan` | Registro de préstamo de un dispositivo a un usuario (`user_id`, `device_id`, `loan_date`, `return_date`, `status`) |
 
-## Evidencia de errores controlados
+**Relaciones (`relationship()` + `back_populates`):**
+- Un usuario puede tener muchos préstamos (`User.loans` ↔ `Loan.user`)
+- Un dispositivo puede aparecer en muchos préstamos históricos (`Device.loans` ↔ `Loan.device`)
+- Cada préstamo pertenece a un usuario y a un dispositivo (`ForeignKey` + integridad referencial)
 
-| Escenario | Método | Código | Respuesta |
+---
+
+## Migraciones con Alembic
+
+Instalación e inicialización:
+
+```bash
+pip install alembic
+alembic init alembic
+```
+
+![Ejecución de alembic init](images/evo10/alembic_init.png)
+
+Generación de la migración (autogenerada a partir de los modelos `Device` y `Loan`):
+
+```bash
+alembic revision --autogenerate -m "create devices and loans tables"
+```
+
+![Creación de migración con autogenerate](images/evo10/alembic_revision_autogenerate.png)
+
+Aplicación de la migración:
+
+```bash
+alembic upgrade head
+```
+
+![Aplicación de migración](images/evo10/alembic_init.png)
+
+Historial de migraciones aplicadas:
+
+```bash
+alembic history
+alembic current
+```
+
+![Historial de migraciones](images/evo10/alembic_history.png)
+
+Estructura de tablas generadas en la base de datos:
+
+![Estructura de tablas](images/evo10/estructura_tablas.png)
+
+---
+
+## Documentación Swagger / OpenAPI
+
+Disponible en `/docs` (Swagger UI) y `/redoc`, organizada por tags: **Users**, **Devices**, **Loans**.
+
+![Swagger UI - vista general](images/evo10/swagger_general.png)
+
+---
+
+## Fase 13 – Pruebas funcionales mínimas (GFPI-F-135 V04)
+
+Escenarios probados de extremo a extremo con Postman, sobre una base de datos migrada desde cero con Alembic.
+
+| # | Escenario | Método y endpoint | Evidencia |
 |---|---|---|---|
-| Usuario inexistente | GET / PUT / PATCH / DELETE `/users/999` | `404` | `{"detail": "Usuario no encontrado"}` |
-| Correo duplicado | POST / PUT / PATCH | `400` | `{"detail": "Ya existe un usuario registrado con el correo ..."}` |
-| PATCH sin campos | PATCH | `400` | `{"detail": "Debes enviar al menos un campo para actualizar"}` |
-| Nombre corto (< 3 caracteres) | POST / PUT / PATCH | `422` | Error de Pydantic: `"String should have at least 3 characters"` |
-| Rol no permitido | POST / PUT / PATCH | `422` | Error de Pydantic: `"Input should be 'admin', 'support' or 'user'"` |
-| Correo con formato inválido | POST / PUT / PATCH | `422` | Error de Pydantic: `"value is not a valid email address"` |
+| 1 | Ejecutar migraciones con Alembic | Terminal: `alembic upgrade head` | ![Migraciones Alembic](images/evo10/alembic_upgrade_head.png) 
 
-## Explicación del manejo de errores implementado
+| 2 | Crear usuario | `POST /users` | ![Crear usuario](images/evo10/post_usuario_creado.png) 
 
-Los errores de **negocio** (usuario no encontrado, correo duplicado, PATCH vacío) se manejan explícitamente con `HTTPException`, devolviendo siempre un JSON simple y consistente:
+| 3 | Crear dispositivo | `POST /devices` | ![Crear dispositivo](images/evo10/post_dispositivo_creado.png) 
 
-```python
-raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
-```
-```json
-{"detail": "Usuario no encontrado"}
-```
+| 4 | Crear préstamo | `POST /loans` | ![Crear préstamo](images/evo10/post_prestamo_creado.png) 
 
-Los errores de **validación de datos** (nombre corto, email mal escrito, rol no permitido) los maneja **Pydantic automáticamente** a partir de las reglas definidas en los modelos (`min_length`, `EmailStr`, `Literal`) — FastAPI responde `422` antes de que el código del endpoint se ejecute, sin que se tenga que validar nada manualmente.
+| 5 | Intentar prestar un dispositivo no disponible | `POST /loans` → 409 Conflict | ![Dispositivo no disponible](images/evo10/prestamo_conflicto_409.png) 
 
-## Explicación del uso de Depends() (Dependency Injection)
+| 6 | Listar préstamos con información de usuario y dispositivo | `GET /loans/details` | ![Préstamos con detalle](images/evo10/get_prestamos_detalle.png) 
 
-La dependencia principal es `get_user_or_404`, definida en `app/dependencies/user_dependencies.py`:
+| 7 | Filtrar préstamos por estado | `GET /loans/details?status=active` | ![Filtro por estado](images/evo10/get_prestamos_filtro_estado.png) 
 
-```python
-def get_user_or_404(user_id: int):
-    usuario = user_service.buscar_usuario_por_id(user_id)
-    if usuario is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return usuario
-```
+| 8 | Filtrar préstamos por tipo de dispositivo | `GET /loans/details?device_type=laptop` | ![Filtro por tipo](images/evo10/get_prestamos_filtro_tipo.png) 
 
-Se reutiliza en **4 rutas distintas** (`GET`, `PUT`, `PATCH` y `DELETE` de `/users/{user_id}`):
+| 9 | Consultar préstamos de un usuario | `GET /users/{user_id}/loans` | ![Préstamos de un usuario](images/evo10/get_prestamos_usuario.png) 
 
-```python
-def obtener_usuario(usuario: dict = Depends(get_user_or_404)):
-    return usuario
-```
+| 10 | Devolver un dispositivo | `PATCH /loans/{loan_id}/return` | ![Devolver dispositivo](images/evo10/patch_prestamo_devolucion.png) 
 
-FastAPI ejecuta la dependencia **antes** de entrar al cuerpo del endpoint. Si el usuario no existe, la petición nunca llega a ejecutarse — el `404` se lanza directo desde la dependencia. Gracias a esto, ninguna de esas 4 rutas repite la lógica de "buscar el usuario y verificar que exista".
+| 11 | Validar que el dispositivo vuelva a estar disponible | `GET /devices/{device_id}` (`is_available: true`) | ![Dispositivo disponible](images/evo10/get_dispositivo_disponible.png) 
 
-También se agregaron dos dependencias adicionales como ejemplo del patrón: `obtener_configuracion_api` (centraliza metadatos fijos de la API) y `verificar_api_key` (simula una autenticación básica leyendo la cabecera `X-API-Key` con `Header()`, sin ser obligatoria en esta actividad).
+| 12 | Consultar historial de préstamos del dispositivo | `GET /devices/{device_id}/loans` | ![Historial del dispositivo](images/evo10/get_historial_dispositivo.png) |
 
-## Capturas de Swagger UI
+---
 
-![Swagger UI - vista general con el CRUD completo]
+## Evidencias funcionales
 
+### Gestión de usuarios
 
-## Evidencia de pruebas de cada endpoint (Postman)
+| Acción | Evidencia |
+|---|---|
+| Listar usuarios | ![Listar usuarios](images/evo10/postman_get_users.png) 
 
-Todas las capturas están en `images/evo8/`.
+| Crear usuario | ![Crear usuario](images/evo10/postman_post_user_exitoso.png) 
 
-### GET /users
+### Gestión de dispositivos
 
-![GET /users](images/evo8/get_users.png)
+| Acción | Evidencia |
+|---|---|
+| Crear dispositivo | ![Crear dispositivo](images/evo10/postman_post_device_exitoso.png) 
 
-`200 OK` — lista completa de usuarios.
+| Serial duplicado (error) | ![Serial duplicado](images/evo10/postman_post_device_serial_duplicado_400.png) 
 
-### GET /users/999 (usuario inexistente)
+| Consultar dispositivo puntual | ![Consultar dispositivo](images/evo10/postman_get_device_puntual.png) 
 
-![GET /users/999](images/evo8/get_user_404.png)
+| Dispositivo inexistente (error) | ![Dispositivo inexistente](images/evo10/postman_get_device_404.png) 
 
-`404 Not Found` — `{"detail": "Usuario no encontrado"}`
+### Gestión de préstamos
 
-### POST /users (exitoso)
+| Acción | Evidencia |
+|---|---|
+| Crear préstamo | ![Crear prestamo](images/evo10/postman_post_loan_exitoso.png) 
 
-![POST /users exitoso](images/evo8/post_exitoso.png)
+| Dispositivo no disponible (error) | ![Dispositivo no disponible](images/evo10/postman_post_loan_409_no_disponible.png) 
 
-`201 Created` — usuario creado con `id` asignado automáticamente.
+| Devolver dispositivo | ![Devolver dispositivo](images/evo10/postman_patch_loan_return_exitoso.png) 
 
-### POST /users (correo duplicado)
+| Préstamo ya devuelto (error) | ![Prestamo ya devuelto](images/evo10/postman_patch_loan_return_409.png) 
 
-![POST /users correo duplicado](images/evo8/post_duplicado_400.png)
+### Consultas con joins
 
-`400 Bad Request` — `{"detail": "Ya existe un usuario registrado con el correo sofia@correo.com"}`
+| Acción | Evidencia 
+|---|---|
+| Préstamos con información relacionada (`/loans/details`) | ![Loans details](images/evo10/postman_get_loans_details.png) 
 
-### POST /users (datos inválidos)
+| Préstamos de un usuario (`/users/{id}/loans`) | ![Loans de un usuario](images/evo10/postman_get_user_loans.png) 
 
-![POST /users datos inválidos](images/evo8/post_invalido_422.png)
+| Historial de préstamos de un dispositivo (`/devices/{id}/loans`) | ![Historial de dispositivo](images/evo10/postman_get_device_loans.png) 
 
-`422 Unprocessable Content` — Pydantic detalla exactamente qué campo(s) fallaron (nombre muy corto, en este caso).
+### Filtros aplicados
 
-### PUT /users/{id} (reemplazo completo, exitoso)
+| Filtro | Evidencia |
+|---|---|
+| Préstamos por estado (`?status=active`) | ![Filtro por estado](images/evo10/postman_get_loans_filter_status.png) 
 
-![PUT /users/2 exitoso](images/evo8/put_exitoso.png)
+| Préstamos por tipo de dispositivo (`?device_type=laptop`) | ![Filtro por tipo](images/evo10/postman_get_loans_filter_device_type.png) 
 
-`200 OK` — todos los campos del usuario quedan reemplazados por los nuevos valores enviados.
+---
 
-### PATCH /users/{id} (actualización parcial)
+## Manejo de errores
 
-![PATCH /users/3 parcial](images/evo8/patch_parcial.png)
+| Caso | Código |
+|---|---|
+| Registro creado | 201 Created |
+| Consulta exitosa | 200 OK |
+| Devolución exitosa | 200 OK |
+| Eliminación exitosa | 204 No Content |
+| Recurso no encontrado | 404 Not Found |
+| Dato duplicado (serial repetido) | 400 Bad Request |
+| Regla de negocio incumplida (dispositivo no disponible / préstamo ya devuelto) | 409 Conflict |
+| Error de validación | 422 Unprocessable Entity |
 
-`200 OK` — solo se modifica el campo `role`; el resto de los datos del usuario permanece igual.
+---
 
-### PATCH /users/{id} (sin campos)
+## Flujo de Git
 
-![PATCH /users/3 vacío](images/evo8/patch_vacio_400.png)
+Todo el desarrollo se hizo sobre ramas `feature/*`, mergeadas a `develop` con `--no-ff`. Al cierre de la actividad, se creó la rama `device_systems_alembic_relaciones` desde la punta de `develop`, y se mergeó a `main` con `--no-ff`, tal como lo exige la guía.
 
-`400 Bad Request` — `{"detail": "Debes enviar al menos un campo para actualizar"}`
+---
 
-### DELETE /users/{id} (exitoso)
+## Reflexión
 
-![DELETE /users/1 exitoso](images/evo8/delete_exitoso.png)
-
-`200 OK` — `{"detail": "Usuario con id 1 eliminado correctamente"}`
-
-### DELETE /users/{id} (usuario ya eliminado)
-
-![DELETE /users/1 ya eliminado](images/evo8/delete_404.png)
-
-`404 Not Found` — porque ya no existe (se había eliminado en la prueba anterior).
-
-## Reflexión final sobre la evolución del proyecto
-
-Lo que más me costó entender fue `Depends()`. Al principio no tenía claro cómo `get_user_or_404` "sabía" cuál era el `user_id` sin que yo se lo pasara explícitamente en cada endpoint. Cuando entendí que FastAPI simplemente hace coincidir el nombre del parámetro con el de la ruta, todo tuvo sentido, y ahí valoré por qué se llama "inyección de dependencias" — la dependencia se ejecuta sola, antes de que mi función siquiera empiece, y si el usuario no existe, ni se molesta en llamar al resto del código.
-
-También aprendí la diferencia real entre PUT y PATCH, no solo en teoría sino haciéndolo: PUT pide todos los campos porque reemplaza el usuario completo, mientras que PATCH usa `exclude_unset=True` para saber exactamente qué envió el cliente y no pisar los demás datos por accidente. Y agregar el DELETE fue el más simple de todos, casi una recompensa después de resolver los otros dos.
-
-En general, este ejercicio me mostró cómo una API pequeña, si no se organiza bien desde el principio, se vuelve difícil de mantener apenas se le agrega una operación más. Separar por responsabilidades no fue un capricho de la guía, fue la única forma de que agregar PUT, PATCH y DELETE no significara reescribir todo lo que ya funcionaba.
+Esta actividad me enseñó a tratar la base de datos como parte del código, no como algo fijo: cada cambio pasa por una migración con Alembic, que permite evolucionar el esquema sin perder los datos existentes. Modelar las relaciones entre User, Device y Loan me hizo pensar en reglas de negocio reales (validar disponibilidad, actualizar estados en cascada) en lugar de CRUDs aislados. Las consultas con joins y el manejo diferenciado de errores (400 vs 409) terminaron de darle a la API un comportamiento mucho más cercano a un sistema real que a un ejercicio académico.
