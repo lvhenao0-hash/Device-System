@@ -5,7 +5,7 @@ app = FastAPI(
     title="device_systems API",
     description="API REST para la gestion de usuarios, dispositivos y prestamos del sistema device_systems, con migraciones controladas mediante Alembic.",
     version="4.0.0",
-    contact={"name": "Juan Camilo Sarrazola", "email": "camilo@correo.com"},
+    contact={"name": "Laura Vanessa Henao", "email": "Vanessa@correo.com"},
     openapi_tags=[
         {"name": "Users", "description": "Operaciones sobre usuarios y su historial de prestamos"},
         {"name": "Devices", "description": "Operaciones CRUD sobre dispositivos y su historial de prestamos"},
