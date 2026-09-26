@@ -1,234 +1,469 @@
-# device_systems
+device_systems – EV11 Seguridad y Autenticación
 
-API REST desarrollada con **FastAPI** para la gestión de usuarios, dispositivos y préstamos, con persistencia en base de datos mediante **SQLAlchemy**, migraciones controladas con **Alembic**, relaciones entre modelos y consultas avanzadas con **joins** y filtros.
+API REST desarrollada con FastAPI para la gestión de usuarios, dispositivos y préstamos.
+Esta versión corresponde a la evolución GA1-220501096-01-AA1-EV11, cuyo objetivo es incorporar seguridad, autenticación, autorización y protección de la API.
 
-Proyecto desarrollado por: **Laura Vanessa Henao**
+Estado del proyecto recibido: la carpeta entregada corresponde a la versión anterior con FastAPI + SQLAlchemy + Alembic, recursos users, devices y loans, relaciones, joins y filtros. EV11 debe agregarse sobre esta base.
 
----
+1. Objetivo de EV11
 
-## Evolución del proyecto
+La aplicación debe incorporar:
 
-- **EV09**: migración de almacenamiento en memoria a persistencia con SQLAlchemy + SQLite, CRUD completo de `users`.
-- **EV10** *(actual)*: incorporación de Alembic, nuevos recursos `devices` y `loans`, relaciones entre modelos, consultas con joins y filtros avanzados.
+Validaciones avanzadas con Pydantic v2.
 
----
+Hash seguro de contraseñas con Passlib.
 
-## Estructura del proyecto
+OAuth2 + JWT.
+
+Protección de rutas mediante dependencias.
+
+Autorización básica por roles.
+
+CORS.
+
+Middleware personalizado.
+
+Rate limiting con SlowAPI.
+
+Documentación Swagger/OpenAPI.
+
+Migración Alembic para los nuevos campos de autenticación.
+
+La guía de la actividad establece los endpoints /auth/register, /auth/login y /auth/me, además de la protección de las rutas existentes. fileciteturn0file0L215-L250
+
+2. Estructura objetivo
 
 device_systems/
-│── app/
-│ │── main.py
-│ │
-│ │── database/
-│ │ │── connection.py
-│ │
-│ │── models/
-│ │ │── user_model.py
-│ │ │── device_model.py
-│ │ │── loan_model.py
-│ │
-│ │── schemas/
-│ │ │── user_schema.py
-│ │ │── device_schema.py
-│ │ │── loan_schema.py
-│ │
-│ │── routes/
-│ │ │── user_routes.py
-│ │ │── device_routes.py
-│ │ │── loan_routes.py
-│ │ │── user_loan_routes.py
-│ │
-│ │── services/
-│ │ │── user_service.py
-│ │ │── device_service.py
-│ │ │── loan_service.py
-│ │
-│ │── dependencies/
-│ │── database_dependency.py
-│ │── user_dependencies.py
-│
-│── alembic/
-│ │── versions/
-│
-│── alembic.ini
-│── requirements.txt
-│── README.md
+├── app/
+│   ├── main.py
+│   ├── auth/
+│   │   ├── auth_routes.py
+│   │   ├── auth_service.py
+│   │   └── security.py
+│   ├── database/
+│   │   └── connection.py
+│   ├── models/
+│   │   ├── user_model.py
+│   │   ├── device_model.py
+│   │   └── loan_model.py
+│   ├── schemas/
+│   │   ├── user_schema.py
+│   │   ├── device_schema.py
+│   │   ├── loan_schema.py
+│   │   └── auth_schema.py
+│   ├── routes/
+│   │   ├── user_routes.py
+│   │   ├── device_routes.py
+│   │   └── loan_routes.py
+│   ├── services/
+│   │   ├── user_service.py
+│   │   ├── device_service.py
+│   │   └── loan_service.py
+│   ├── dependencies/
+│   │   ├── database_dependency.py
+│   │   └── auth_dependency.py
+│   └── middlewares/
+│       └── request_middleware.py
+├── alembic/
+│   └── versions/
+├── .env
+├── .env.example
+├── alembic.ini
+├── requirements.txt
+└── README.md
 
+Esta estructura sigue la estructura sugerida oficialmente para EV11. fileciteturn0file0L92-L144
 
----
+3. Dependencias
 
-## Modelos y relaciones
+Instalar:
 
-| Modelo | Descripción |
-|---|---|
-| `User` | Usuarios del sistema (`name`, `email`, `role`, `is_active`, `created_at`) |
-| `Device` | Dispositivos disponibles para préstamo (`name`, `serial_number`, `device_type`, `brand`, `is_available`, `created_at`) |
-| `Loan` | Registro de préstamo de un dispositivo a un usuario (`user_id`, `device_id`, `loan_date`, `return_date`, `status`) |
+pip install python-jose[cryptography] passlib[bcrypt] slowapi python-multipart
 
-**Relaciones (`relationship()` + `back_populates`):**
-- Un usuario puede tener muchos préstamos (`User.loans` ↔ `Loan.user`)
-- Un dispositivo puede aparecer en muchos préstamos históricos (`Device.loans` ↔ `Loan.device`)
-- Cada préstamo pertenece a un usuario y a un dispositivo (`ForeignKey` + integridad referencial)
+Mantener las dependencias existentes de FastAPI, Uvicorn, SQLAlchemy, Alembic, Pydantic, email-validator y python-dotenv. fileciteturn0file0L145-L157
 
----
+Ejemplo de requirements.txt:
 
-## Migraciones con Alembic
+fastapi
+uvicorn
+sqlalchemy
+alembic
+pydantic
+email-validator
+python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+slowapi
+python-multipart
 
-Instalación e inicialización:
+4. Variables de entorno
 
-```bash
-pip install alembic
-alembic init alembic
-```
+Crear .env:
 
-![Ejecución de alembic init](images/evo10/alembic_init.png)
+SECRET_KEY=cambiar_por_una_clave_secreta_larga
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-Generación de la migración (autogenerada a partir de los modelos `Device` y `Loan`):
+Crear .env.example sin secretos reales:
 
-```bash
-alembic revision --autogenerate -m "create devices and loans tables"
-```
+SECRET_KEY=your_secret_key_here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-![Creación de migración con autogenerate](images/evo10/alembic_revision_autogenerate.png)
+No subir .env al repositorio.
 
-Aplicación de la migración:
+5. Actualizar User
 
-```bash
+Agregar al modelo User:
+
+hashed_password = Column(String, nullable=False)
+role = Column(String, nullable=False)
+is_active = Column(Boolean, default=True)
+
+La contraseña debe almacenarse solamente como hash y hashed_password nunca debe exponerse en los modelos de respuesta. fileciteturn0file0L161-L194
+
+Después:
+
+alembic revision --autogenerate -m "add authentication fields to users"
 alembic upgrade head
-```
 
-![Aplicación de migración](images/evo10/alembic_init.png)
+6. Seguridad de contraseñas y JWT
 
-Historial de migraciones aplicadas:
+Crear app/auth/security.py con funciones equivalentes a:
 
-```bash
-alembic history
-alembic current
-```
+get_password_hash(password)
+verify_password(plain_password, hashed_password)
+create_access_token(data: dict)
+decode_access_token(token: str)
 
-![Historial de migraciones](images/evo10/alembic_history.png)
+La guía exige hash de contraseñas y creación/validación de tokens JWT. fileciteturn0file0L177-L194
 
-Estructura de tablas generadas en la base de datos:
+7. Schemas Pydantic v2
 
-![Estructura de tablas](images/evo10/estructura_tablas.png)
+Crear app/schemas/auth_schema.py.
 
----
+Debe contemplar:
 
-## Documentación Swagger / OpenAPI
+UserRegister
 
-Disponible en `/docs` (Swagger UI) y `/redoc`, organizada por tags: **Users**, **Devices**, **Loans**.
+UserLogin
 
-![Swagger UI - vista general](images/evo10/swagger_general.png)
+Token
 
----
+TokenData
 
-## Fase 13 – Pruebas funcionales mínimas (GFPI-F-135 V04)
+La contraseña debe cumplir:
 
-Escenarios probados de extremo a extremo con Postman, sobre una base de datos migrada desde cero con Alembic.
+mínimo 8 caracteres;
 
-| # | Escenario | Método y endpoint | Evidencia |
-|---|---|---|---|
-| 1 | Ejecutar migraciones con Alembic | Terminal: `alembic upgrade head` | ![Migraciones Alembic](images/evo10/alembic_upgrade_head.png) 
+una mayúscula;
 
-| 2 | Crear usuario | `POST /users` | ![Crear usuario](images/evo10/post_usuario_creado.png) 
+una minúscula;
 
-| 3 | Crear dispositivo | `POST /devices` | ![Crear dispositivo](images/evo10/post_dispositivo_creado.png) 
+un número;
 
-| 4 | Crear préstamo | `POST /loans` | ![Crear préstamo](images/evo10/post_prestamo_creado.png) 
+sin espacios.
 
-| 5 | Intentar prestar un dispositivo no disponible | `POST /loans` → 409 Conflict | ![Dispositivo no disponible](images/evo10/prestamo_conflicto_409.png) 
+Usar Field(), field_validator, model_validator cuando corresponda y ConfigDict(from_attributes=True) en respuestas. fileciteturn0file0L196-L214
 
-| 6 | Listar préstamos con información de usuario y dispositivo | `GET /loans/details` | ![Préstamos con detalle](images/evo10/get_prestamos_detalle.png) 
+8. Endpoints de autenticación
 
-| 7 | Filtrar préstamos por estado | `GET /loans/details?status=active` | ![Filtro por estado](images/evo10/get_prestamos_filtro_estado.png) 
+Crear app/auth/auth_routes.py.
 
-| 8 | Filtrar préstamos por tipo de dispositivo | `GET /loans/details?device_type=laptop` | ![Filtro por tipo](images/evo10/get_prestamos_filtro_tipo.png) 
+Registro
 
-| 9 | Consultar préstamos de un usuario | `GET /users/{user_id}/loans` | ![Préstamos de un usuario](images/evo10/get_prestamos_usuario.png) 
+POST /auth/register
 
-| 10 | Devolver un dispositivo | `PATCH /loans/{loan_id}/return` | ![Devolver dispositivo](images/evo10/patch_prestamo_devolucion.png) 
+Debe validar nombre, email, unicidad, contraseña y rol, y guardar el hash, no la contraseña original.
 
-| 11 | Validar que el dispositivo vuelva a estar disponible | `GET /devices/{device_id}` (`is_available: true`) | ![Dispositivo disponible](images/evo10/get_dispositivo_disponible.png) 
+Login
 
-| 12 | Consultar historial de préstamos del dispositivo | `GET /devices/{device_id}/loans` | ![Historial del dispositivo](images/evo10/get_historial_dispositivo.png) |
+POST /auth/login
 
----
+Respuesta:
 
-## Evidencias funcionales
+{
+  "access_token": "token_generado",
+  "token_type": "bearer"
+}
 
-### Gestión de usuarios
+Usuario autenticado
 
-| Acción | Evidencia |
-|---|---|
-| Listar usuarios | ![Listar usuarios](images/evo10/postman_get_users.png) 
+GET /auth/me
+Authorization: Bearer <token>
 
-| Crear usuario | ![Crear usuario](images/evo10/postman_post_user_exitoso.png) 
+No debe devolver hashed_password. fileciteturn0file0L225-L250
 
-### Gestión de dispositivos
+9. Protección por roles
 
-| Acción | Evidencia |
-|---|---|
-| Crear dispositivo | ![Crear dispositivo](images/evo10/postman_post_device_exitoso.png) 
+Crear app/dependencies/auth_dependency.py.
 
-| Serial duplicado (error) | ![Serial duplicado](images/evo10/postman_post_device_serial_duplicado_400.png) 
+Dependencias mínimas:
 
-| Consultar dispositivo puntual | ![Consultar dispositivo](images/evo10/postman_get_device_puntual.png) 
+get_current_user
+get_current_active_user
+require_admin
 
-| Dispositivo inexistente (error) | ![Dispositivo inexistente](images/evo10/postman_get_device_404.png) 
+Protecciones exigidas:
 
-### Gestión de préstamos
+Endpoint
 
-| Acción | Evidencia |
-|---|---|
-| Crear préstamo | ![Crear prestamo](images/evo10/postman_post_loan_exitoso.png) 
+Protección
 
-| Dispositivo no disponible (error) | ![Dispositivo no disponible](images/evo10/postman_post_loan_409_no_disponible.png) 
+GET /users
 
-| Devolver dispositivo | ![Devolver dispositivo](images/evo10/postman_patch_loan_return_exitoso.png) 
+Usuario autenticado
 
-| Préstamo ya devuelto (error) | ![Prestamo ya devuelto](images/evo10/postman_patch_loan_return_409.png) 
+GET /users/{user_id}
 
-### Consultas con joins
+Usuario autenticado
 
-| Acción | Evidencia 
-|---|---|
-| Préstamos con información relacionada (`/loans/details`) | ![Loans details](images/evo10/postman_get_loans_details.png) 
+POST /devices
 
-| Préstamos de un usuario (`/users/{id}/loans`) | ![Loans de un usuario](images/evo10/postman_get_user_loans.png) 
+admin o support
 
-| Historial de préstamos de un dispositivo (`/devices/{id}/loans`) | ![Historial de dispositivo](images/evo10/postman_get_device_loans.png) 
+PUT /devices/{device_id}
 
-### Filtros aplicados
+admin o support
 
-| Filtro | Evidencia |
-|---|---|
-| Préstamos por estado (`?status=active`) | ![Filtro por estado](images/evo10/postman_get_loans_filter_status.png) 
+DELETE /devices/{device_id}
 
-| Préstamos por tipo de dispositivo (`?device_type=laptop`) | ![Filtro por tipo](images/evo10/postman_get_loans_filter_device_type.png) 
+admin
 
----
+POST /loans
 
-## Manejo de errores
+Usuario autenticado
 
-| Caso | Código |
-|---|---|
-| Registro creado | 201 Created |
-| Consulta exitosa | 200 OK |
-| Devolución exitosa | 200 OK |
-| Eliminación exitosa | 204 No Content |
-| Recurso no encontrado | 404 Not Found |
-| Dato duplicado (serial repetido) | 400 Bad Request |
-| Regla de negocio incumplida (dispositivo no disponible / préstamo ya devuelto) | 409 Conflict |
-| Error de validación | 422 Unprocessable Entity |
+PATCH /loans/{loan_id}/return
 
----
+admin o support
 
-## Flujo de Git
+GET /loans/details
 
-Todo el desarrollo se hizo sobre ramas `feature/*`, mergeadas a `develop` con `--no-ff`. Al cierre de la actividad, se creó la rama `device_systems_alembic_relaciones` desde la punta de `develop`, y se mergeó a `main` con `--no-ff`, tal como lo exige la guía.
+admin o support
 
----
+La guía establece 401 Unauthorized para token inexistente/inválido y 403 Forbidden para falta de permisos. fileciteturn0file0L251-L275
 
-## Reflexión
+10. CORS
 
-Esta actividad me enseñó a tratar la base de datos como parte del código, no como algo fijo: cada cambio pasa por una migración con Alembic, que permite evolucionar el esquema sin perder los datos existentes. Modelar las relaciones entre User, Device y Loan me hizo pensar en reglas de negocio reales (validar disponibilidad, actualizar estados en cascada) en lugar de CRUDs aislados. Las consultas con joins y el manejo diferenciado de errores (400 vs 409) terminaron de darle a la API un comportamiento mucho más cercano a un sistema real que a un ejercicio académico.
+En app/main.py configurar CORSMiddleware.
+
+Para desarrollo:
+
+allow_origins=[
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+allow_credentials=True
+allow_methods=["*"]
+allow_headers=["*"]
+
+En producción conviene declarar orígenes concretos en lugar de usar "*" cuando se trabajan credenciales. La actividad pide explicar esta decisión en el README. fileciteturn0file0L277-L292
+
+11. Middleware
+
+Crear app/middlewares/request_middleware.py.
+
+Debe:
+
+medir el tiempo de respuesta;
+
+agregar X-Process-Time;
+
+agregar X-App-Name: device_systems;
+
+generar o propagar X-Request-ID;
+
+registrar método, ruta y estado HTTP.
+
+Ejemplo de resultado:
+
+X-App-Name: device_systems
+X-Process-Time: 0.0042
+X-Request-ID: 8f42e9c1
+
+Estos requisitos corresponden a la Fase 10. fileciteturn0file0L294-L304
+
+12. Rate limiting
+
+Configurar SlowAPI.
+
+Límites mínimos:
+
+Endpoint
+
+Límite
+
+POST /auth/login
+
+5/minuto
+
+POST /auth/register
+
+3/minuto
+
+GET /users
+
+30/minuto
+
+POST /loans
+
+10/minuto
+
+Al superar el límite debe aparecer 429 Too Many Requests. La evidencia debe mostrar al menos una prueba donde se active el límite. fileciteturn0file0L306-L316
+
+13. Swagger/OpenAPI
+
+Configurar:
+
+app = FastAPI(
+    title="device_systems API",
+    description="API REST segura para gestión de usuarios, dispositivos y préstamos",
+    version="3.0.0"
+)
+
+Tags:
+
+Auth
+
+Users
+
+Devices
+
+Loans
+
+Security
+
+Swagger debe mostrar endpoints protegidos, OAuth2, modelos, respuestas y errores. fileciteturn0file0L317-L340
+
+14. Ejecución
+
+Desde la raíz:
+
+uvicorn app.main:app --reload
+
+Abrir:
+
+http://127.0.0.1:8000/docs
+
+15. Pruebas obligatorias
+
+Realizar y capturar:
+
+Registro correcto.
+
+Registro con contraseña débil.
+
+Registro con email duplicado.
+
+Login correcto.
+
+Login con contraseña incorrecta.
+
+/auth/me.
+
+Ruta protegida sin token.
+
+Token inválido.
+
+Usuario sin permisos.
+
+Crear dispositivo con rol permitido.
+
+Eliminar dispositivo con rol no permitido.
+
+CORS.
+
+Cabeceras del middleware.
+
+Rate limiting.
+
+Swagger/OpenAPI.
+
+La lista corresponde a la Fase 13 de la actividad. fileciteturn0file0L341-L356
+
+16. Evidencias para README
+
+La guía solicita evidencias de:
+
+estructura del proyecto;
+
+migración Alembic;
+
+registro;
+
+login y token;
+
+/auth/me;
+
+acceso sin token;
+
+acceso con rol no permitido;
+
+Swagger con OAuth2;
+
+cabeceras del middleware;
+
+rate limiting;
+
+CORS;
+
+reflexión final. fileciteturn0file0L413-L425
+
+17. Git
+
+Crear la rama solicitada:
+
+git checkout -b device_systems_security
+
+Después de probar:
+
+git add .
+git commit -m "feat: add API security authentication middleware cors and rate limiting"
+git push -u origin device_systems_security
+
+La evidencia de aprendizaje solicita una rama llamada device_systems_security que posteriormente debe unificarse con main. fileciteturn0file0L394-L412
+
+18. Checklist final
+
+User tiene hashed_password.
+
+Contraseñas nunca se guardan en texto plano.
+
+Registro funciona.
+
+Login genera JWT.
+
+/auth/me funciona con Bearer token.
+
+Rutas protegidas.
+
+Roles admin, support, user.
+
+Respuestas 401/403 correctas.
+
+Pydantic v2 con validaciones.
+
+CORS configurado.
+
+Middleware funcionando.
+
+X-App-Name, X-Process-Time, X-Request-ID.
+
+Rate limiting devuelve 429.
+
+Swagger muestra OAuth2.
+
+Alembic aplicado.
+
+.env.example incluido.
+
+README actualizado.
+
+Evidencias capturadas.
+
+Video máximo 15 minutos.
+
+19. Reflexión final
+
+La evolución a EV11 agrega una capa de seguridad sobre la API existente. El proyecto pasa de una API con persistencia, relaciones y CRUD a una API que controla identidad, acceso, validación, trazabilidad y abuso de peticiones. La seguridad se implementa como parte de la arquitectura y no como una funcionalidad aislada.

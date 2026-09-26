@@ -1,21 +1,18 @@
+import os
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# URL de conexión a la base de datos
-DATABASE_URL = "sqlite:///device_systems.db"
+load_dotenv()
 
-# Crear el motor de conexión
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./device_systems.db")
+
 engine = create_engine(
     DATABASE_URL,
-    echo=True
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
 )
 
-# Crear la sesión
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base para los modelos
 Base = declarative_base()

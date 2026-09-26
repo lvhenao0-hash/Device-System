@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.dependencies.auth_dependency import get_current_active_user
 from app.dependencies.database_dependency import get_db
 from app.dependencies.user_dependencies import get_user_or_404
 from app.models.user_model import User
@@ -22,5 +23,6 @@ router = APIRouter(prefix="/users", tags=["Users"])
 def historial_prestamos_usuario(
     usuario: User = Depends(get_user_or_404),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
 ):
     return loan_service.get_user_loans(db, usuario.id)

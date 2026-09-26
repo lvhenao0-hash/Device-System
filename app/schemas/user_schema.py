@@ -11,8 +11,9 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    """Entrada para POST /users."""
-    pass
+    """Entrada para POST /users (creacion administrativa). Requiere una
+    contrasena inicial que se almacena como hash, igual que en /auth/register."""
+    password: str = Field(..., min_length=8, description="Contrasena inicial del usuario (se guarda como hash)")
 
 
 class UserUpdate(UserBase):
